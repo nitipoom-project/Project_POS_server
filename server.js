@@ -12,7 +12,6 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true })) // for parsing application/x-www-form-urlencoded
 
-
 // เชื่อมต่อฐานข้อมูล SQLite
 // ตรวจสอบให้แน่ใจว่า database.db อยู่ในโฟลเดอร์เดียวกันกับ server.js
 const db = new sqlite3.Database('./POS.db', sqlite3.OPEN_READWRITE, (err) => {
@@ -97,18 +96,6 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 //-----------------------------------------------------------------------------------------------------
 
 // -----------------------------------Route สำหรับการดึงข้อมูลสินค้า-----------------------------------
-// app.get('/api/showproducts', (req, res) => {
-//     const sql = "SELECT *, Users.user_status, Category.category_name, Unit.unit_name FROM Products INNER JOIN Users ON Products.user_id = Users.user_id INNER JOIN Category ON Products.category_id = Category.category_id INNER JOIN Unit ON Products.unit_id = Unit.unit_id ORDER BY Products.product_id DESC";
-//     db.all(sql, [], (err, rows) => {
-//         if (err) {
-//             return res.status(500).json({ error: err.message });
-//         }
-//         res.json({
-//             message: "success",
-//             data: rows
-//         });
-//     });
-// });
 app.get('/api/showproducts', (req, res) => {
     const sql = "SELECT *, Category.category_name, Unit.unit_name FROM Products INNER JOIN Category ON Products.category_id = Category.category_id INNER JOIN Unit ON Products.unit_id = Unit.unit_id ORDER BY Products.product_id DESC";
     db.all(sql, [], (err, rows) => {
@@ -126,6 +113,21 @@ app.get('/api/showproducts', (req, res) => {
 //----------------------------------- Route สำหรับดึงข้อมูลประเภทสินค้า -----------------------------------
 app.get('/api/category', (req, res) => {
     const sql = "SELECT * FROM Category";
+    db.all(sql, [], (err, rows) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        res.json({
+            message: "success",
+            data: rows
+        });
+    });
+});
+//----------------------------------------------------------------------------------------------------
+
+//---------------------------------- Route สำหรับดึงข้อมูลหน่วยสินค้า -----------------------------------
+app.get('/api/unit', (req, res) => {
+    const sql = "SELECT * FROM Unit";
     db.all(sql, [], (err, rows) => {
         if (err) {
             return res.status(500).json({ error: err.message });
