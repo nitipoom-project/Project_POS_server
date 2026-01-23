@@ -236,7 +236,7 @@ app.post('/api/addbillitem', (req, res) => {
     // console.log("👉 billNo:", billNo);
     // console.log("👉 products:", products);
     // console.log("👉 user_id:", user_id);
-    if (!billNo || !products || !Array.isArray(products) || products.length === 0 || !user_id ) {
+    if (!billNo || !products || !Array.isArray(products) || products.length === 0 || !user_id) {
         return res.status(400).json({ error: 'All fields are required' });
     }
 
@@ -297,10 +297,10 @@ app.post('/api/reportbill', (req, res) => {
 app.get('/api/totalsales', (req, res) => {
     const sql = "SELECT SUM(total) as totalsales FROM Report_bill";
     db.get(sql, [], (err, row) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json({ data: row || { totalsales: 0 } });
-    // console.log("👉 totalsales:", row);
-});
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ data: row || { totalsales: 0 } });
+        // console.log("👉 totalsales:", row);
+    });
 
 });
 //-------------------------------------------------------------------------------------------------------------
@@ -328,6 +328,32 @@ app.get('/api/shop_address', (req, res) => {
     });
 });
 //-------------------------------------------------------------------------------------------------------------
+
+//---------------------------------- ข้อมูลรหัสสินค้า -----------------------------------------------
+app.get('/api/bill_items', (req, res) => {
+    const sql = "SELECT p.product_name AS name,SUM(bi.quantity) AS value FROM bill_item bi INNER JOIN Products p ON bi.product_id = p.product_id GROUP BY p.product_name ORDER BY value DESC LIMIT 5;";
+    db.all(sql, [], (err, rows) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        res.json({ data: rows });
+    }
+    );
+});
+//-------------------------------------------------------------------------------------------------------------
+
+//---------------------------------- ยอดขายรายเดือน -----------------------------------------------
+app.get('/api/sales_by_month/:date', (req, res) => {
+    const sql = `SELECT SUBSTR(date,4) AS date, SUM( total ) AS total_sum FROM Report_Bill WHERE payment_status = 'paid' AND date LIKE '%-${req.params.date}';`;
+    db.all(sql, [], (err, rows) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        res.json({ data: rows });
+    });
+});
+//-------------------------------------------------------------------------------------------------------------
+
 
 // เริ่มต้น Server
 app.listen(port, () => {
