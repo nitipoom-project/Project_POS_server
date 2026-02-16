@@ -529,6 +529,68 @@ app.put('/api/updateuser/:id', async (req, res) => {
 });
 //------------------------------------------------------------------------
 
+//------------------------ เรียกข้อมูลสินค้าตาม ID -----------------------------------
+app.get('/api/getproduct/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const sql = `
+      SELECT
+    pd.product_name,
+    pd.product_price,
+    pd.product_cost,
+    pd.product_detail,
+    pd.date,
+    pd.product_quantity,
+    ct.category_name,
+    un.unit_name
+FROM
+    products pd
+    INNER JOIN category ct ON pd.category_id = ct.category_id
+    INNER JOIN unit un ON pd.unit_id = un.unit_id
+
+WHERE
+    pd.product_id = ?;
+    `;
+    const [rows] = await pool.query(sql, [id]);
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+    res.json({
+      message: 'success',
+      data: rows[0]
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+//-------------------------------------------------------------------------------
+
+//------------------------ update product ---------------------------------------
+app.put('/api/updateproduct/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { price, cost, quantity } = req.body;
+
+    const sql = `
+      UPDATE products
+      SET product_price = ?,
+          product_cost = ?,
+          product_quantity = ?
+      WHERE product_id = ?
+    `;
+
+    await pool.query(sql, [price, cost, quantity, id]);
+
+    res.json({ message: 'update success' });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+//-------------------------------------------------------------------------------
+
 // Test endpoint
 app.get('/api/test', (req, res) => {
   res.json({ message: 'Backend บน Windows ทำงานแล้ว 🎉' });
