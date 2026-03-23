@@ -33,7 +33,7 @@ app.post('/api/userslogin', async (req, res) => {
     }
 
     const [rows] = await pool.query(
-      'SELECT user_name, user_fn, user_status FROM Users WHERE user_name = ? AND user_password = ?',
+      'SELECT user_id, user_name, user_fn, user_status FROM Users WHERE user_name = ? AND user_password = ?',
       [username, password]
     );
 
@@ -396,71 +396,147 @@ app.get('/api/bill_item', async (req, res) => {
 });
 //------------------------------------------------------------------------
 
-//------------------------ total sales -----------------------------------
-app.get('/api/total_sales', async (req, res) => {
+//------------------------update_stock-------------------------------
+app.post('/api/update_stock', async (req, res) => {
   try {
-    const sql = `
-      SELECT SUM(total) as totalsales FROM Report_bill
-    `;
-    const [rows] = await pool.query(sql);
-    res.json({
-      message: 'success',
-      data: rows[0]
-    });
+    const { products } = req.body;
+
+    for (const item of products) {
+      const sql = `
+        UPDATE products
+        SET product_quantity = product_quantity - ?
+        WHERE product_id = ?
+      `;
+      await pool.query(sql, [item.quantity, item.product_id]);
+    }
+
+    res.json({ message: 'Stock updated successfully' });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
   }
 });
+//-------------------------------------------------------------------
+
+//------------------------ total sales -----------------------------------
+// app.get('/api/total_sales', async (req, res) => {
+//   try {
+//     const sql = `
+//       SELECT SUM(total) as totalsales FROM Report_bill
+//     `;
+//     const [rows] = await pool.query(sql);
+//     res.json({
+//       message: 'success',
+//       data: rows[0]
+//     });
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({ error: err.message });
+//   }
+// });
 //------------------------------------------------------------------------
 
 //------------------------ show profit -----------------------------------
-app.get('/api/profit', async (req, res) => {
-  try {
-    const sql = `
-      SELECT
-    SUM( quantity * pd.product_price - quantity * pd.product_cost ) AS profit
-    FROM
-      bill_item bt
-    JOIN products pd ON
-      bt.product_id = pd.product_id
-    JOIN report_bill rb ON
-      bt.bill_no = rb.bill_no;
-    `;
-    const [rows] = await pool.query(sql);
-    res.json({
-      message: 'success',
-      profit: rows[0].profit ?? 0
-    });
+// app.get('/api/profit', async (req, res) => {
+//   try {
+//     const sql = `
+//       SELECT
+//     SUM( quantity * pd.product_price - quantity * pd.product_cost ) AS profit
+//     FROM
+//       bill_item bt
+//     JOIN products pd ON
+//       bt.product_id = pd.product_id
+//     JOIN report_bill rb ON
+//       bt.bill_no = rb.bill_no;
+//     `;
+//     const [rows] = await pool.query(sql);
+//     res.json({
+//       message: 'success',
+//       profit: rows[0].profit ?? 0
+//     });
 
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: err.message });
-  }
-});
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({ error: err.message });
+//   }
+// });
 //------------------------------------------------------------------------
 
 //------------------------ โชว์ยอดขายรายเดือน -----------------------------------
 app.get('/api/sales_by_month/:date', async (req, res) => {
+  console.log('Fetch sales by month for date:', req.params.date);
   try {
-    const { date } = req.params; // 2026-02
+    // const { date } = req.params; // 2026-02
+    // const sql = `
+    //   // SELECT
+    //   //   SUBSTR(DATE, 1, 7) AS DATE,
+    //   //   COUNT(*) AS total_bill,
+    //   //   SUM(total) AS total_sum
+    //   // FROM
+    //   //   Report_Bill
+    //   // WHERE
+    //   //   payment_status = 'paid' AND DATE LIKE ?;
+    // `;
+    const { date } = req.params;
     const sql = `
-      SELECT
-        SUBSTR(DATE, 1, 7) AS DATE,
-        COUNT(*) AS total_bill,
-        SUM(total) AS total_sum
-      FROM
-        Report_Bill
-      WHERE
-        payment_status = 'paid' AND DATE LIKE ?;
-    `;
-    const [rows] = await pool.query(sql, [`${date}%`]);
+    SELECT
+      (
+        SELECT SUM(total)
+        FROM report_bill
+        WHERE date LIKE ? 
+      ) AS total,
+
+      (
+        SELECT COUNT(*)
+        FROM report_bill
+        WHERE date LIKE ? 
+      ) AS total_bill,
+      SUM(bt.quantity * pd.product_price - bt.quantity * pd.product_cost) AS profit
+    FROM bill_item bt
+    JOIN products pd 
+      ON bt.product_id = pd.product_id
+    JOIN report_bill rb 
+      ON bt.bill_no = rb.bill_no
+    WHERE rb.date LIKE ? 
+    ;`; 
+    const [rows] = await pool.query(sql, [`${date}%`, `${date}%`, `${date}%`]);
     res.json({
       message: 'success',
       data: rows
     });
   } catch (err) {
     console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+//------------------------------------------------------------------------
+
+//------------------------ โชว์ยอดขายรายวัน -----------------------------------
+app.get('/api/sales_by_day/:date', async (req, res) => {
+  try {
+    const { date } = req.params;
+
+    const sql = `
+    SELECT
+      COUNT(DISTINCT rb.bill_no) AS total_bill,
+      SUM(DISTINCT rb.total) AS total,
+      SUM(bt.quantity * pd.product_price - bt.quantity * pd.product_cost) AS profit
+    FROM bill_item bt
+    JOIN products pd 
+      ON bt.product_id = pd.product_id
+    JOIN report_bill rb 
+      ON bt.bill_no = rb.bill_no
+    WHERE rb.date = ?
+    `;
+
+    const [rows] = await pool.query(sql, [date]);
+
+    res.json({
+      message: 'success',
+      data: rows
+    });
+
+  } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
@@ -588,6 +664,124 @@ app.put('/api/updateproduct/:id', async (req, res) => {
   }
 });
 //-------------------------------------------------------------------------------
+
+//------------------------ เรียกข้อมูลร้านค้าตาม ID -----------------------------------
+app.get('/api/getshop/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const sql = `
+      SELECT
+        shop_name,
+        shop_address,
+        shop_tel
+      FROM shop
+      WHERE shop_id = ?;
+    `;
+    const [rows] = await pool.query(sql, [id]);
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Shop not found' });
+    }
+    res.json({
+      message: 'success',
+      data: rows[0]
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+//--------------------------------------------------------------------------------
+
+//------------------------ update shop ---------------------------------------
+app.put('/api/updateshop/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { shop_name, shop_address, shop_tel } = req.body;
+    const sql = `
+      UPDATE shop
+      SET shop_name = ?,
+          shop_address = ?,
+          shop_tel = ?
+      WHERE shop_id = ?
+    `;
+    await pool.query(sql, [shop_name, shop_address, shop_tel, id]);
+    res.json({ message: 'update success' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+//----------------------------------------------------------------------------
+
+//------------------------ promptpay & cash -----------------------------------
+app.get('/api/getpromptpay', async (req, res) => {
+  try {
+    const sql = `
+      SELECT
+        pm_status
+      FROM payment
+      WHERE pm_name = 'promptpay';
+    `;
+    const [rows] = await pool.query(sql);
+    res.json({
+      message: 'success',
+      data: rows
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/getcash', async (req, res) => {
+  try {
+    const sql = `
+      SELECT
+        pm_status
+      FROM payment
+      WHERE pm_name = 'cash';
+    `;
+    const [rows] = await pool.query(sql);
+    res.json({
+      message: 'success',
+      data: rows
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.put('/api/updatepromptpay', async (req, res) => {
+  // console.log('Update PromptPay status:', req.body);
+  try {
+    const { status } = req.body;
+    const sql = `
+      UPDATE payment
+      SET pm_status = ?
+      WHERE pm_name = 'promptpay'
+    `;
+    await pool.query(sql, [status]);
+    res.json({ message: 'update success' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.put('/api/updatecash', async (req, res) => {
+  try {
+    const { status } = req.body;
+    const sql = `
+      UPDATE payment
+      SET pm_status = ?
+      WHERE pm_name = 'cash'
+    `;
+    await pool.query(sql, [status]);
+    res.json({ message: 'update success' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+//---------------------------------------------------------------------------------
 
 // Test endpoint
 app.get('/api/test', (req, res) => {
