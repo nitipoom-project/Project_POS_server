@@ -21,6 +21,14 @@ const pool = mysql.createPool({
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0
+  // host: 'mysql.railway.internal',   // เปลี่ยนจาก localhost
+  // port: 3306,                        // ใส่ port ของ Railway
+  // user: 'root',                      // เปลี่ยนตาม Railway
+  // password: 'DJREMhHZjbEzVQISZlfadtEyJtvCNdMu', // เปลี่ยนตาม Railway
+  // database: 'railway',               // เปลี่ยนตาม Railway
+  // waitForConnections: true,
+  // connectionLimit: 10,
+  // queueLimit: 0
 });
 //--------------------------login---------------------------------
 app.post('/api/userslogin', async (req, res) => {
@@ -153,6 +161,7 @@ app.post('/api/addproducts', upload.none(), async (req, res) => {
 
   try {
     const {
+      barcode,
       name,
       categoryID,
       unitID,
@@ -165,11 +174,12 @@ app.post('/api/addproducts', upload.none(), async (req, res) => {
 
     const sql = `
       INSERT INTO Products
-      (product_name, category_id, unit_id, product_price, product_cost, product_detail, date, product_quantity)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      (product_barcode, product_name, category_id, unit_id, product_price, product_cost, product_detail, date, product_quantity)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     const [result] = await pool.query(sql, [
+      barcode,
       name,
       categoryID,
       unitID,
