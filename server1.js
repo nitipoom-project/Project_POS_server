@@ -90,7 +90,7 @@ app.post('/api/userslogin', async (req, res) => {
     }
 
     const [rows] = await pool.query(
-      'SELECT user_id, user_name, user_fn, user_status FROM Users WHERE user_name = ? AND user_password = ?',
+      'SELECT user_id, user_name, user_fn, user_status FROM users WHERE user_name = ? AND user_password = ?',
       [username, password]
     );
 
@@ -164,9 +164,9 @@ app.get('/api/showproducts', async (req, res) => {
         c.category_name,
         u.unit_name,
         p.product_detail
-      FROM Products p
-        INNER JOIN Category c ON p.category_id = c.category_id
-        INNER JOIN Unit u ON p.unit_id = u.unit_id;
+      FROM products p
+        INNER JOIN category c ON p.category_id = c.category_id
+        INNER JOIN unit u ON p.unit_id = u.unit_id;
     `;
     const [rows] = await pool.query(sql);
     res.json({
@@ -186,7 +186,7 @@ app.get('/api/category', async (req, res) => {
     const sql = `
       SELECT 
         *
-      FROM Category;
+      FROM category;
     `;
     const [rows] = await pool.query(sql);
     res.json({
@@ -206,7 +206,7 @@ app.get('/api/unit', async (req, res) => {
     const sql = `
       SELECT
         *
-      FROM Unit;
+      FROM unit;
     `;
     const [rows] = await pool.query(sql);
     res.json({
@@ -238,7 +238,7 @@ app.post('/api/addproducts', upload.none(), async (req, res) => {
     } = req.body;
 
     const sql = `
-      INSERT INTO Products
+      INSERT INTO products
       (product_barcode, product_name, category_id, unit_id, product_price, product_cost, product_detail, date, product_quantity)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
@@ -270,7 +270,7 @@ app.post('/api/addproducts', upload.none(), async (req, res) => {
 app.delete('/api/deleteproduct/:id', async (req, res) => {
   const productId = req.params.id;
   try {
-    const sql = 'DELETE FROM Products WHERE product_id = ?';
+    const sql = 'DELETE FROM products WHERE product_id = ?';
     const [result] = await pool.query(sql, [productId]);
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: 'Product not found' });
@@ -298,7 +298,7 @@ app.post('/api/addusers', upload.none(), async (req, res) => {
       status
     } = req.body;
     const sql = `
-      INSERT INTO Users
+      INSERT INTO users
       (user_fn, user_ln, user_name, user_password, user_email, user_address, user_tel, user_status)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `;
@@ -328,7 +328,7 @@ app.delete('/api/deleteuser/:id', async (req, res) => {
   console.log('Delete User ID:', req.params.id);
   const userId = req.params.id;
   try {
-    const sql = 'DELETE FROM Users WHERE user_id = ?';
+    const sql = 'DELETE FROM users WHERE user_id = ?';
     const [result] = await pool.query(sql, [userId]);
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: 'User not found' });
@@ -390,7 +390,7 @@ app.post('/api/reportbill', async (req, res) => {
     } = req.body;
 
     const sql = `
-      INSERT INTO Report_bill
+      INSERT INTO report_bill
       (bill_no, payment_status, payment_method, date, time, total, cash)
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `;
@@ -439,7 +439,7 @@ app.get('/api/report', async (req, res) => {
     const sql = `
       SELECT 
         *
-      FROM Report_bill;
+      FROM report_bill;
     `;
     const [rows] = await pool.query(sql);
     res.json({
@@ -457,7 +457,7 @@ app.get('/api/report', async (req, res) => {
 app.get('/api/bill_item', async (req, res) => {
   try {
     const sql = `
-      SELECT p.product_name AS name,SUM(bi.quantity) AS value FROM bill_item bi INNER JOIN Products p ON bi.product_id = p.product_id GROUP BY p.product_name ORDER BY value DESC LIMIT 5;
+      SELECT p.product_name AS name,SUM(bi.quantity) AS value FROM bill_item bi INNER JOIN products p ON bi.product_id = p.product_id GROUP BY p.product_name ORDER BY value DESC LIMIT 5;
     `;
     const [rows] = await pool.query(sql);
     res.json({
