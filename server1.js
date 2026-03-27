@@ -17,12 +17,25 @@ app.use(cors({
 
 const pool = mysql.createPool({
   host: process.env.MYSQLHOST,
-  port: process.env.MYSQLPORT,
+  port: Number(process.env.MYSQLPORT), // 👈 สำคัญ
   user: process.env.MYSQLUSER,
   password: process.env.MYSQLPASSWORD,
   database: process.env.MYSQLDATABASE,
+
   waitForConnections: true,
   connectionLimit: 10,
+  queueLimit: 0,
+
+  connectTimeout: 10000 // 👈 กันค้าง
+});
+// const pool = mysql.createPool({
+  // host: process.env.MYSQLHOST,
+  // port: process.env.MYSQLPORT,
+  // user: process.env.MYSQLUSER,
+  // password: process.env.MYSQLPASSWORD,
+  // database: process.env.MYSQLDATABASE,
+  // waitForConnections: true,
+  // connectionLimit: 10,
   // host: 'localhost',
   // user: 'root',
   // // password: '',
@@ -40,7 +53,7 @@ const pool = mysql.createPool({
   // waitForConnections: true,
   // connectionLimit: 10,
   // queueLimit: 0
-});
+// });
 app.get('/api/debug-db', async (req, res) => {
   try {
     console.log("Testing DB...");
@@ -837,6 +850,15 @@ app.put('/api/updatecash', async (req, res) => {
 app.get('/api/test', (req, res) => {
   res.json({ message: 'Backend บน Windows ทำงานแล้ว 🎉' });
 });
+(async () => {
+  try {
+    const conn = await pool.getConnection();
+    console.log("✅ DB CONNECTED");
+    conn.release();
+  } catch (err) {
+    console.error("❌ DB ERROR:", err);
+  }
+})();
 // Start the server
 app.listen(port, () => {
   console.log(`Server running at port : ${port}`);
