@@ -18,12 +18,12 @@ app.use(express.json());
 // const port = 3001;
 const port = process.env.PORT || 8080;
 
-app.use(cors({
-  origin: [
-    'http://localhost:3000',
-    'https://projectposserver-production.up.railway.app'
-  ]
-}));
+// app.use(cors({
+//   origin: [
+//     'http://localhost:3000',
+//     'https://projectposserver-production.up.railway.app'
+//   ]
+// }));
 
 const pool = mysql.createPool({
   host: process.env.MYSQLHOST,
