@@ -41,6 +41,19 @@ const pool = mysql.createPool({
   // connectionLimit: 10,
   // queueLimit: 0
 });
+app.get('/api/debug-db', async (req, res) => {
+  try {
+    console.log("Testing DB...");
+    const [rows] = await pool.query("SELECT 1");
+    res.json({ success: true, rows });
+  } catch (err) {
+    console.error("DB ERROR:", err);
+    res.status(500).json({
+      error: err.message,
+      full: err
+    });
+  }
+});
 //--------------------------login---------------------------------
 app.post('/api/userslogin', async (req, res) => {
   console.log('BODY:', req.body);
