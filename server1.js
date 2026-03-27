@@ -1,21 +1,24 @@
 console.log("🔥 NEW CODE VERSION 999");
+
 const express = require('express');
 const multer = require('multer');
 const upload = multer();
 const mysql = require('mysql2/promise');
 const cors = require('cors');
+
+const app = express(); // ✅ ต้องมาก่อน
+
+// ✅ ค่อยใช้ app
 app.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// 👇 สำคัญมาก (รองรับ preflight)
-app.options('*', cors());
-const app = express();
-// app.use(cors());
+app.options('*', cors()); // ✅ รองรับ preflight
+
 app.use(express.json());
-// const port = 3001;
+
 const port = process.env.PORT || 8080;
 
 // app.use(cors({
