@@ -6,16 +6,16 @@ const upload = multer();
 const mysql = require('mysql2/promise');
 const cors = require('cors');
 
-const app = express(); // ✅ ต้องมาก่อน
+const app = express(); // ✅ ต้องอยู่ก่อน
 
-// ✅ ค่อยใช้ app
+// ✅ แล้วค่อยใช้
 app.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-app.options('*', cors()); // ✅ รองรับ preflight
+app.options('*', cors());
 
 app.use(express.json());
 
