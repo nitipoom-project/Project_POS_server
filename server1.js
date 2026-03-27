@@ -859,6 +859,9 @@ app.get('/api/test', (req, res) => {
     console.error("❌ DB ERROR:", err);
   }
 })();
+app.get('/', (req, res) => {
+  res.send('OK ROOT WORKING');
+});
 // Start the server
 app.listen(port, '0.0.0.0', () => {
   console.log(`Server running at port : ${port}`);
