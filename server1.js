@@ -234,7 +234,7 @@ app.get('/api/unit', async (req, res) => {
 //-------------------------------------------------------------
 
 //-----------------------add product-----------------------------
-app.post('/api/addproducts', upload.none(), async (req, res) => {
+app.post('/api/addproducts', async (req, res) => {
   console.log('BODY:', req.body);
 
   try {
